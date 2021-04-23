@@ -3,8 +3,10 @@ dotenv.config();
 import express, { Application, NextFunction, Request, Response } from 'express';
 
 // import routes
-import userRoutes from './routes/user_routes';
-// import familyRoutes from './routes/families.routes';
+import userRoutes from './routes/user.routes';
+import categoryRoutes from './routes/category_master.routes';
+import tradeStatusRoutes from './routes/trade_status_master.routes';
+import gardenRoutes from './routes/garden.routes';
 
 
 const app: Application = express();
@@ -19,7 +21,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // routes
 app.use('/api', userRoutes);
-// app.use('/api/family', familyRoutes);
+app.use('/api/trade', tradeStatusRoutes);
+app.use('/api/category', categoryRoutes);
+app.use('/api/garden', gardenRoutes);
 
 const port = process.env.PORT || 3000;
 

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { errorHandler, responseHandler } from '../config/helper';
-import { User } from '../models/user_model';
+import { User } from '../models/user.model';
 import jwt from 'jsonwebtoken';
 import endpointsConfig from '../config/endpoints.config';
 

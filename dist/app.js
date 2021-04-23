@@ -26,8 +26,10 @@ const dotenv = __importStar(require("dotenv"));
 dotenv.config();
 const express_1 = __importDefault(require("express"));
 // import routes
-const user_routes_1 = __importDefault(require("./routes/user_routes"));
-// import familyRoutes from './routes/families.routes';
+const user_routes_1 = __importDefault(require("./routes/user.routes"));
+const category_master_routes_1 = __importDefault(require("./routes/category_master.routes"));
+const trade_status_master_routes_1 = __importDefault(require("./routes/trade_status_master.routes"));
+const garden_routes_1 = __importDefault(require("./routes/garden.routes"));
 const app = express_1.default();
 app.use(express_1.default.json());
 app.use((req, res, next) => {
@@ -38,7 +40,9 @@ app.use((req, res, next) => {
 });
 // routes
 app.use('/api', user_routes_1.default);
-// app.use('/api/family', familyRoutes);
+app.use('/api/trade', trade_status_master_routes_1.default);
+app.use('/api/category', category_master_routes_1.default);
+app.use('/api/garden', garden_routes_1.default);
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Listening on port: ${port}`);

@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const garden_controller_1 = require("../controllers/garden.controller");
+const express_1 = require("express");
+const checkauth_1 = require("../middleware/checkauth");
+const router = express_1.Router();
+router.post('/create', checkauth_1.checkAuth, garden_controller_1.createGarden);
+router.get('/list', checkauth_1.checkAuth, garden_controller_1.getUserGarden);
+router.post('/update/:id', checkauth_1.checkAuth, garden_controller_1.editGardenPlant);
+router.post('/delete/:id', checkauth_1.checkAuth, garden_controller_1.deleteGardenItem);
+router.get('/get/:id', checkauth_1.checkAuth, garden_controller_1.getGardenItemById);
+exports.default = router;

@@ -14,7 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserbyId = exports.updateUser = exports.loginUser = void 0;
 const helper_1 = require("../config/helper");
-const user_model_1 = require("../models/user_model");
+const user_model_1 = require("../models/user.model");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const endpoints_config_1 = __importDefault(require("../config/endpoints.config"));
 // login user
