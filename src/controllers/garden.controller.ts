@@ -186,7 +186,7 @@ export const getGardenItemById = async (req: Request, res: Response, next: NextF
 
         responseHandler(
             {
-                message: 'Garden item deleted successfully',
+                message: 'Garden item retrived successfully',
                 data: gardenData,
             },
             res
@@ -194,5 +194,36 @@ export const getGardenItemById = async (req: Request, res: Response, next: NextF
 
     } catch (err) {
         errorHandler(err, res);
+    }
+}
+
+export const isGardenValid = async (userId: string, gardenId: number, quantity: number,): Promise<{ status: boolean, message: string, }> => {
+    try {
+
+        // find if item exists
+        const data = await Garden.findByPk(gardenId, { useMaster: true });
+        console.log(data);
+
+        // check if garden exists
+        if (!data) {
+            return { status: false, message: `Garden with id: ${gardenId} does not exist.` };
+        }
+
+        const gardenData: Garden = data.get({ plain: true });
+        // check if garden belongs to user
+        if (gardenData.userId != userId) {
+            return { status: false, message: 'Unauthorized' };
+        }
+
+        // check quantity
+        if (quantity > gardenData.quantity) {
+            return { status: false, message: `Maximum quantity available for garden: ${gardenId} is ${gardenData.quantity}` };
+        }
+
+        return { status: true, message: '' };
+
+    } catch (err) {
+        console.log(err);
+        return { status: false, message: 'Some error occured, please try again later.**' };
     }
 }

@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getGardenItemById = exports.deleteGardenItem = exports.editGardenPlant = exports.getUserGarden = exports.createGarden = void 0;
+exports.isGardenValid = exports.getGardenItemById = exports.deleteGardenItem = exports.editGardenPlant = exports.getUserGarden = exports.createGarden = void 0;
 const garden_model_1 = require("../models/garden.model");
 const helper_1 = require("../config/helper");
 const createGarden = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -145,7 +145,7 @@ const getGardenItemById = (req, res, next) => __awaiter(void 0, void 0, void 0, 
             throw { message: 'Unauthorized' };
         }
         helper_1.responseHandler({
-            message: 'Garden item deleted successfully',
+            message: 'Garden item retrived successfully',
             data: gardenData,
         }, res);
     }
@@ -154,3 +154,29 @@ const getGardenItemById = (req, res, next) => __awaiter(void 0, void 0, void 0, 
     }
 });
 exports.getGardenItemById = getGardenItemById;
+const isGardenValid = (userId, gardenId, quantity) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // find if item exists
+        const data = yield garden_model_1.Garden.findByPk(gardenId, { useMaster: true });
+        console.log(data);
+        // check if garden exists
+        if (!data) {
+            return { status: false, message: `Garden with id: ${gardenId} does not exist.` };
+        }
+        const gardenData = data.get({ plain: true });
+        // check if garden belongs to user
+        if (gardenData.userId != userId) {
+            return { status: false, message: 'Unauthorized' };
+        }
+        // check quantity
+        if (quantity > gardenData.quantity) {
+            return { status: false, message: `Maximum quantity available for garden: ${gardenId} is ${gardenData.quantity}` };
+        }
+        return { status: true, message: '' };
+    }
+    catch (err) {
+        console.log(err);
+        return { status: false, message: 'Some error occured, please try again later.**' };
+    }
+});
+exports.isGardenValid = isGardenValid;
