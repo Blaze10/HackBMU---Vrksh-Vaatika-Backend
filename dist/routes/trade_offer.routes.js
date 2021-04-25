@@ -8,4 +8,5 @@ router.post('/create', checkauth_1.checkAuth, trade_offer_controller_1.createTra
 router.post('/edit/:id', checkauth_1.checkAuth, trade_offer_controller_1.editTradeOffer);
 router.get('/useroffers', checkauth_1.checkAuth, trade_offer_controller_1.getUserOffers);
 router.delete('/delete/:id', checkauth_1.checkAuth, trade_offer_controller_1.deleteTradeOffer);
+router.get('/listing/:id', checkauth_1.checkAuth, trade_offer_controller_1.getOffersByListing);
 exports.default = router;

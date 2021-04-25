@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteTradeOffer = exports.getUserOffers = exports.editTradeOffer = exports.createTradeOffer = void 0;
+exports.getOffersByListing = exports.deleteTradeOffer = exports.getUserOffers = exports.editTradeOffer = exports.createTradeOffer = void 0;
 const trade_offer_model_1 = require("../models/trade_offer.model");
 const database_1 = __importDefault(require("../database"));
 const helper_1 = require("../config/helper");
@@ -193,3 +193,53 @@ const deleteTradeOffer = (req, res, next) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.deleteTradeOffer = deleteTradeOffer;
+const getOffersByListing = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const listingId = req.params.id;
+        // check if listing is valid
+        const listingData = yield listing_model_1.Listing.findByPk(listingId);
+        if (!listingData) {
+            throw { message: 'Please provide a valid listingId' };
+        }
+        const queryData = yield database_1.default.query(`SELECT DISTINCT
+        tof.id AS offerId,
+        ls.id AS listingId,
+        ols.id AS offeredListingId,
+        u.name AS listerName,
+        ou.name AS offererName,
+        u.id AS listerId,
+        ou.id AS offererId,
+        tof.createdAt,
+        tof.updatedAt,
+        ts.name AS status
+    FROM
+        TradeOffers AS tof
+            INNER JOIN
+        Listings AS ls ON ls.id = tof.listingId
+            INNER JOIN
+        Listings AS ols ON ols.id = tof.offeredListingId
+            INNER JOIN
+        TradeStatuses AS ts ON ts.id = tof.status
+            INNER JOIN
+        Users AS u ON u.id = ls.userId
+            INNER JOIN
+        Users AS ou ON ou.id = ols.userId
+    WHERE
+       (ls.id = ${listingId} or ols.id = ${listingId}) and tof.status = 1
+    ORDER BY tof.updatedAt DESC;`, {
+            type: sequelize_1.QueryTypes.SELECT,
+        });
+        if (!queryData || queryData.length <= 0) {
+            helper_1.responseHandler({
+                data: [],
+            }, res);
+        }
+        helper_1.responseHandler({
+            data: queryData,
+        }, res);
+    }
+    catch (err) {
+        helper_1.errorHandler(err, res);
+    }
+});
+exports.getOffersByListing = getOffersByListing;
