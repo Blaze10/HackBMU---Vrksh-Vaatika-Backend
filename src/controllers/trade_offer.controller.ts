@@ -251,3 +251,65 @@ export const deleteTradeOffer = async (
         errorHandler(err, res);
     }
 };
+
+export const getOffersByListing = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const listingId = req.params.id;
+
+        // check if listing is valid
+        const listingData = await Listing.findByPk(listingId);
+        if (!listingData) {
+            throw { message: 'Please provide a valid listingId' };
+        }
+
+        const queryData = await db.query(
+            `SELECT DISTINCT
+        tof.id AS offerId,
+        ls.id AS listingId,
+        ols.id AS offeredListingId,
+        u.name AS listerName,
+        ou.name AS offererName,
+        u.id AS listerId,
+        ou.id AS offererId,
+        tof.createdAt,
+        tof.updatedAt,
+        ts.name AS status
+    FROM
+        TradeOffers AS tof
+            INNER JOIN
+        Listings AS ls ON ls.id = tof.listingId
+            INNER JOIN
+        Listings AS ols ON ols.id = tof.offeredListingId
+            INNER JOIN
+        TradeStatuses AS ts ON ts.id = tof.status
+            INNER JOIN
+        Users AS u ON u.id = ls.userId
+            INNER JOIN
+        Users AS ou ON ou.id = ols.userId
+    WHERE
+       (ls.id = ${listingId} or ols.id = ${listingId}) and tof.status = 1
+    ORDER BY tof.updatedAt DESC;`,
+            {
+                type: QueryTypes.SELECT,
+            }
+        );
+
+
+        if (!queryData || queryData.length <= 0) {
+            responseHandler({
+                data: [],
+            }, res);
+        }
+
+        responseHandler({
+            data: queryData,
+        }, res);
+
+    } catch (err) {
+        errorHandler(err, res);
+    }
+};
