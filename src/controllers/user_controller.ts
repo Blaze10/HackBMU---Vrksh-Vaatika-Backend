@@ -43,10 +43,11 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
             user = data.get({ plain: true });
         }
 
-
+        user.profilePicture = null;
         const token = jwt.sign({
             ...user
         }, endpointsConfig.JWT_SECRET, { expiresIn: '9999 years' });
+
 
         responseHandler({
             token: token,

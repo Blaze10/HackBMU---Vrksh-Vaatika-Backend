@@ -8,7 +8,7 @@ import categoryRoutes from './routes/category_master.routes';
 import tradeStatusRoutes from './routes/trade_status_master.routes';
 import gardenRoutes from './routes/garden.routes';
 import listingRoutes from './routes/listing.routes';
-
+import tradeOfferRoutes from './routes/trade_offer.routes';
 
 const app: Application = express();
 
@@ -28,6 +28,7 @@ app.use('/api/trade', tradeStatusRoutes);
 app.use('/api/category', categoryRoutes);
 app.use('/api/garden', gardenRoutes);
 app.use('/api/listing', listingRoutes);
+app.use('/api/offer', tradeOfferRoutes);
 
 const port = process.env.PORT || 3000;
 

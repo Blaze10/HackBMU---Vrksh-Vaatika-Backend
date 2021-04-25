@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const trade_offer_controller_1 = require("../controllers/trade_offer.controller");
+const checkauth_1 = require("../middleware/checkauth");
+const router = express_1.Router();
+router.post('/create', checkauth_1.checkAuth, trade_offer_controller_1.createTradeOffer);
+router.post('/edit/:id', checkauth_1.checkAuth, trade_offer_controller_1.editTradeOffer);
+router.get('/useroffers', checkauth_1.checkAuth, trade_offer_controller_1.getUserOffers);
+router.delete('/delete/:id', checkauth_1.checkAuth, trade_offer_controller_1.deleteTradeOffer);
+exports.default = router;

@@ -90,7 +90,7 @@ const editGardenPlant = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
             description: description || gardenData.description,
             image: image || gardenData.image,
             ownedSince: ownedSince || gardenData.ownedSince,
-            quantity: quantity || gardenData.ownedSince,
+            quantity: quantity || gardenData.quantity,
             isActive: isActive || gardenData.isActive,
         });
         helper_1.responseHandler({

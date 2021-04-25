@@ -50,6 +50,7 @@ const loginUser = (req, res, next) => __awaiter(void 0, void 0, void 0, function
             });
             user = data.get({ plain: true });
         }
+        user.profilePicture = null;
         const token = jsonwebtoken_1.default.sign(Object.assign({}, user), endpoints_config_1.default.JWT_SECRET, { expiresIn: '9999 years' });
         helper_1.responseHandler(Object.assign(Object.assign({ token: token }, user), { message: 'Login successful' }), res);
     }

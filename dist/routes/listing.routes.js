@@ -9,4 +9,5 @@ router.get('/list', checkauth_1.checkAuth, listing_controller_1.getUserListings)
 router.post('/update/:id', checkauth_1.checkAuth, listing_controller_1.updateListing);
 router.get('/get/:id', checkauth_1.checkAuth, listing_controller_1.getListingById);
 router.delete('/:id', checkauth_1.checkAuth, listing_controller_1.deleteListing);
+router.get('/nearby', checkauth_1.checkAuth, listing_controller_1.nearbyListings);
 exports.default = router;

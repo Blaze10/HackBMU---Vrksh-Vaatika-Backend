@@ -31,6 +31,7 @@ const category_master_routes_1 = __importDefault(require("./routes/category_mast
 const trade_status_master_routes_1 = __importDefault(require("./routes/trade_status_master.routes"));
 const garden_routes_1 = __importDefault(require("./routes/garden.routes"));
 const listing_routes_1 = __importDefault(require("./routes/listing.routes"));
+const trade_offer_routes_1 = __importDefault(require("./routes/trade_offer.routes"));
 const app = express_1.default();
 app.use(express_1.default.json({
     limit: '50mb'
@@ -47,6 +48,7 @@ app.use('/api/trade', trade_status_master_routes_1.default);
 app.use('/api/category', category_master_routes_1.default);
 app.use('/api/garden', garden_routes_1.default);
 app.use('/api/listing', listing_routes_1.default);
+app.use('/api/offer', trade_offer_routes_1.default);
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
     console.log(`Listening on port: ${port}`);

@@ -12,13 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateListing = exports.deleteListing = exports.getListingById = exports.updateListing = exports.getUserListings = exports.createListing = void 0;
+exports.calculatDistanceinKm = exports.validateListing = exports.nearbyListings = exports.deleteListing = exports.getListingById = exports.updateListing = exports.getUserListings = exports.createListing = void 0;
 const helper_1 = require("./../config/helper");
 const garden_controller_1 = require("./garden.controller");
 const listing_model_1 = require("../models/listing.model");
 const listing_details_model_1 = require("../models/listing_details.model");
 const database_1 = __importDefault(require("../database"));
 const sequelize_1 = require("sequelize");
+const geolib_1 = require("geolib");
 // User.hasMany(Garden);
 // Garden.belongsTo(User, { foreignKey: 'userId'});
 // Garden.hasMany(Listing);
@@ -89,10 +90,11 @@ const getUserListings = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
     try {
         const tokenData = req['userData'];
         const userId = tokenData.id;
-        const queryResult = yield database_1.default.query(`SELECT 
+        const queryResult = yield database_1.default.query(`SELECT DISTINCT  
         ls.id,
         ls.lookingFor,
         ld.quantity,
+        ts.name as status,
         gd.plantName,
         gd.id as gardenId,
         gd.image,
@@ -100,6 +102,9 @@ const getUserListings = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
         cm.name AS category,
         gd.description,
         gd.ownedSince,
+        u.lat,
+        u.lng,
+        u.name as userName,
         ls.createdAt,
         ls.updatedAt
     FROM
@@ -110,8 +115,12 @@ const getUserListings = (req, res, next) => __awaiter(void 0, void 0, void 0, fu
         Gardens AS gd ON gd.id = ld.gardenId
             INNER JOIN
         CategoryMasters AS cm ON cm.id = gd.categoryId
+            INNER JOIN
+        Users AS u ON u.id = ls.userId
+            INNER JOIN
+        TradeStatuses AS ts ON ts.id = ls.status
     WHERE
-        ls.userId = ${userId}`, {
+        ls.userId = "${userId}" and ls.isActive = true`, {
             type: sequelize_1.QueryTypes.SELECT,
         });
         if (!queryResult || queryResult.length <= 0) {
@@ -190,14 +199,15 @@ const getListingById = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         const userId = tokenData.id;
         const listingId = +req.params.id;
         // check if listing is valid
-        const isListingValid = yield exports.validateListing(userId, listingId);
-        if (!isListingValid.status) {
-            throw { message: isListingValid.message };
-        }
-        const queryResult = yield database_1.default.query(`SELECT 
+        // const isListingValid = await validateListing(userId, listingId);
+        // if (!isListingValid.status) {
+        //     throw { message: isListingValid.message };
+        // }
+        const queryResult = yield database_1.default.query(`SELECT DISTINCT 
         ls.id,
         ls.lookingFor,
         ld.quantity,
+        ts.name as status,
         gd.plantName,
         gd.id as gardenId,
         gd.image,
@@ -205,6 +215,9 @@ const getListingById = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         cm.name AS category,
         gd.description,
         gd.ownedSince,
+        u.lat,
+        u.lng,
+        u.name as userName,
         ls.createdAt,
         ls.updatedAt
     FROM
@@ -215,8 +228,12 @@ const getListingById = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         Gardens AS gd ON gd.id = ld.gardenId
             INNER JOIN
         CategoryMasters AS cm ON cm.id = gd.categoryId
+            INNER JOIN
+        Users AS u ON u.id = ls.userId
+            INNER JOIN
+        TradeStatuses AS ts ON ts.id = ls.status
     WHERE
-        ls.userId = ${userId} and ls.id = ${listingId}`, {
+        ls.id = ${listingId}`, {
             type: sequelize_1.QueryTypes.SELECT,
         });
         if (!queryResult || queryResult.length <= 0) {
@@ -245,8 +262,8 @@ const deleteListing = (req, res, next) => __awaiter(void 0, void 0, void 0, func
         if (!isListingValid.status) {
             throw { message: isListingValid.message };
         }
-        yield listing_details_model_1.ListingDetail.destroy({ where: { 'listingId': listingId } });
-        yield listing_model_1.Listing.destroy({ where: { 'id': listingId } });
+        yield listing_details_model_1.ListingDetail.destroy({ where: { listingId: listingId } });
+        yield listing_model_1.Listing.destroy({ where: { id: listingId } });
         helper_1.responseHandler({
             message: 'Listing deleted successfully',
         }, res);
@@ -256,7 +273,93 @@ const deleteListing = (req, res, next) => __awaiter(void 0, void 0, void 0, func
     }
 });
 exports.deleteListing = deleteListing;
-const validateListing = (userId, listingId) => __awaiter(void 0, void 0, void 0, function* () {
+// get nearby listings
+const nearbyListings = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const tokenData = req['userData'];
+        const userId = tokenData.id;
+        const queryResult = yield database_1.default.query(`SELECT DISTINCT
+        userId, u.lat, u.lng
+    FROM
+        Listings AS ls
+            INNER JOIN
+        Users AS u ON u.id = ls.userId 
+            WHERE
+            userId != "${userId}";`, {
+            type: sequelize_1.QueryTypes.SELECT,
+        });
+        if (!queryResult || queryResult.length <= 0) {
+            helper_1.responseHandler({
+                data: [],
+            }, res);
+        }
+        // get elegible user
+        const eligibleUsers = [];
+        let queryList = JSON.parse(JSON.stringify(queryResult));
+        for (const item of queryList) {
+            console.log(item);
+            const distance = exports.calculatDistanceinKm(tokenData.lat, tokenData.lng, item.lat, item.lng) || 40;
+            if (distance <= 30) {
+                eligibleUsers.push(item.userId);
+            }
+        }
+        if (eligibleUsers.length <= 0) {
+            helper_1.responseHandler({
+                data: [],
+            }, res);
+        }
+        const listingQuery = yield database_1.default.query(`SELECT DISTINCT 
+        ls.id,
+        ls.lookingFor,
+        ld.quantity,
+        ts.name as status,
+        gd.plantName,
+        gd.id as gardenId,
+        gd.image,
+        cm.id AS categoryId,
+        cm.name AS category,
+        gd.description,
+        gd.ownedSince,
+        u.lat,
+        u.lng,
+        u.name as userName,
+        ls.createdAt,
+        ls.updatedAt
+    FROM
+        Listings AS ls
+            INNER JOIN
+        ListingDetails AS ld ON ld.listingId = ls.id
+            INNER JOIN
+        Gardens AS gd ON gd.id = ld.gardenId
+            INNER JOIN
+        CategoryMasters AS cm ON cm.id = gd.categoryId
+            INNER JOIN
+        Users AS u ON u.id = ls.userId
+            INNER JOIN
+        TradeStatuses AS ts ON ts.id = ls.status
+    WHERE
+        ls.userId in (${eligibleUsers.join(',')})  and ls.isActive = true`, {
+            type: sequelize_1.QueryTypes.SELECT,
+        });
+        if (!listingQuery || listingQuery.length <= 0) {
+            helper_1.responseHandler({
+                message: 'No Listings found',
+                data: [],
+            }, res);
+        }
+        helper_1.responseHandler({
+            data: listingQuery,
+        }, res);
+        helper_1.responseHandler({
+            eligibleUsers: eligibleUsers,
+        }, res);
+    }
+    catch (err) {
+        helper_1.errorHandler(err, res);
+    }
+});
+exports.nearbyListings = nearbyListings;
+const validateListing = (userId, listingId, forTrade = false) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         // find listing
         const data = yield listing_model_1.Listing.findByPk(listingId);
@@ -269,8 +372,11 @@ const validateListing = (userId, listingId) => __awaiter(void 0, void 0, void 0,
         }
         const listingData = data.get({ plain: true });
         // check if listing belongs to user
-        if (listingData.userId != userId) {
+        if (!forTrade && listingData.userId != userId) {
             return { status: false, message: 'Unauthorized' };
+        }
+        if (forTrade && listingData.userId == userId) {
+            return { status: false, message: 'You cannot offer trade against your own listings' };
         }
         return { status: true, message: '' };
     }
@@ -282,3 +388,27 @@ const validateListing = (userId, listingId) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.validateListing = validateListing;
+//  get distance
+const calculatDistanceinKm = (lat1, lng1, lat2, lng2) => {
+    const distance = geolib_1.getPreciseDistance({
+        latitude: lat1,
+        longitude: lng1,
+    }, {
+        latitude: lat2,
+        longitude: lng2,
+    });
+    // const distance = getPreciseDistance(
+    //     {
+    //         latitude: 19.047388, // shikp chowk
+    //         longitude: 73.070107,
+    //     },
+    //     {
+    //         latitude: 19.040314, // kharghar
+    //         longitude: 73.078938,
+    //     }
+    // );
+    const distanceInKm = geolib_1.convertDistance(distance, 'km');
+    console.log('*****', distanceInKm);
+    return distanceInKm;
+};
+exports.calculatDistanceinKm = calculatDistanceinKm;
